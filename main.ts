@@ -2,6 +2,7 @@
 import { LinearClient } from "@linear/sdk";
 import { IssueCreateInput } from "@linear/sdk/dist/_generated_documents";
 import { $ } from "bun";
+import { parseArgs } from "util";
 
 interface Config {
   api_key: string;
@@ -17,13 +18,29 @@ interface State {
 }
 
 async function main() {
-  // zod typechecking
+  // TODO zod typechecking
   const [config, initial] = await getConfig();
   if (initial) {
     console.log(
       "Make sure you add `.todo.state.json` to your global gitignore!",
     );
     console.log("Run again to process TODOs");
+    return;
+  }
+
+  const { values } = parseArgs({
+    args: Bun.argv,
+    options: {
+      "dry-run": {
+        type: "boolean",
+      },
+    },
+    strict: true,
+    allowPositionals: true,
+  });
+  if (values["dry-run"]) {
+    const todos = await getTodos();
+    todos.forEach((t) => console.log(t));
     return;
   }
 
@@ -49,12 +66,11 @@ async function main() {
   }
   if (!parentId) throw "no parent id found, how did you get here";
 
-  const lines = todos.split("\n");
   const overlap = [] as Array<string>;
   const existingTitles = state?.issues.map((i) => i.title) ?? [];
   const existingIds = state?.issues.map((i) => i.id) ?? [];
   const old_issues: State["issues"] = [];
-  const issues = lines
+  const issues = todos
     .filter((l) => {
       const [, , ...title] = l.split(":");
       const fulltitle = title.reduce((t, n) => t + n, "");
@@ -114,11 +130,15 @@ async function updateState(state: State) {
 
 async function getTodos() {
   try {
-    const todos =
+    const todos = (
       await $`rg "\/\/\s*TODO(.)*(\n[\t ]*\/\/.*)*" --trim -U -n | sed s/TODO//g | sed s/\\/\\///g`
         .nothrow()
-        .text();
-    return todos?.trim() ?? "";
+        .text()
+    )
+      .trim()
+      .split("\n")
+      .filter((l) => l.trim().split(":")[2].length != 0);
+    return todos;
   } catch (e) {
     throw "failed getting todos";
   }
