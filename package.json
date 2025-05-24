@@ -1,0 +1,12 @@
+{
+  "name": "todo",
+  "dependencies": {
+    "@linear/sdk": "^40.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.14"
+  },
+  "bin": {
+    "todo": "./main.ts"
+  },
+}
