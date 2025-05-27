@@ -131,7 +131,7 @@ async function updateState(state: State) {
 async function getTodos() {
   try {
     const todos = (
-      await $`rg "\/\/\s*TODO(.)*(\n[\t ]*\/\/.*)*" --trim -U -n | sed s/TODO//g | sed s/\\/\\///g`
+      await $`rg "\/\/\s*TODO(.)*(\n[\t ]*\/\/.*)*" --trim -U -n -o | sed s/TODO//g | sed s/\\/\\///g`
         .nothrow()
         .text()
     )
